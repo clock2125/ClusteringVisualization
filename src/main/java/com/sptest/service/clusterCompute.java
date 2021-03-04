@@ -3,6 +3,7 @@ package com.sptest.service;
 import java.util.*;
 
 import com.sptest.pojo.kScores;
+import com.sptest.response.clusterResult;
 import net.sf.javaml.clustering.*;
 import net.sf.javaml.clustering.evaluation.AICScore;
 import net.sf.javaml.clustering.evaluation.BICScore;
@@ -13,6 +14,7 @@ import net.sf.javaml.core.DefaultDataset;
 import net.sf.javaml.core.DenseInstance;
 import net.sf.javaml.core.Instance;
 import net.sf.javaml.distance.*;
+import net.sf.javaml.filter.normalize.NormalizeMidrange;
 import org.springframework.web.bind.annotation.RequestParam;
 
 abstract public class clusterCompute {
@@ -172,7 +174,7 @@ abstract public class clusterCompute {
 //        return result;
 //    }
 
-    public static int[] clusteringJavaML(List<List<String>> data, String clusterAlg, int kValue,
+    public static clusterResult clusteringJavaML(List<List<String>> data, String clusterAlg, int kValue,
                                          double epsilon, int minpoints,
                                          int iterations, String dmString,
                                          int[] selectedIndex, int repeats,
@@ -257,9 +259,44 @@ abstract public class clusterCompute {
                     result[map.get(instance)] = i;
                 }
             }
+
+            List<String> label = new ArrayList<>();
+            List<double[]> mapData = new ArrayList<>();
+            int clusterNum = clusters.length;
+            int[] itemNum = new int[clusterNum];
+            Instance tempInstance;
+            NormalizeMidrange normal = new NormalizeMidrange();
+            normal.build(rawData);
+            int i = 0;
+            for (Dataset cluster : clusters) {
+                tempInstance = new DenseInstance(new double[colNum]);
+                itemNum[i] = cluster.size();
+                normal.filter(cluster);
+                for (Instance instance : cluster) {
+                    tempInstance = tempInstance.add(instance);
+                }
+
+
+                for(int j = 0;j<colNum;j++){
+                    double[] tempDouble = new double[3];
+                    tempDouble[0] = i;
+                    tempDouble[1] = j;
+                    tempDouble[2] = tempInstance.value(j)/itemNum[i];
+                    mapData.add(tempDouble);
+                }
+
+                i++;
+            }
+
+
+            for (int index : selectedIndex) {
+                label.add("属性"+index);
+            }
+
+            return new clusterResult(result, mapData,itemNum,label);
         }
 
-        return result;
+        return null;
     }
 
     public static double[] getKScores(List<List<String>> data, String clusterAlg, int[] kList,

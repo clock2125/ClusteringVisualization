@@ -111,6 +111,6 @@ public class attrStatisticCompute {
             }
         }
 
-        return new attrStatistics(mean,mid,max,min,var,std,distribution,covDataList);
+        return new attrStatistics(mean,mid,max,min,var,std,distribution,covDataList,covLabelList);
     }
 }

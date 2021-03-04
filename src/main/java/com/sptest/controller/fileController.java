@@ -5,6 +5,7 @@ import com.sptest.pojo.attrStatistics;
 import com.sptest.pojo.clusterSetting;
 import com.sptest.pojo.csvData;
 import com.sptest.pojo.kScores;
+import com.sptest.response.clusterResult;
 import com.sptest.service.attrStatisticCompute;
 import com.sptest.service.csvResolver;
 import com.sptest.service.clusterCompute;
@@ -60,11 +61,11 @@ public class fileController {
 
     @PostMapping("/cluster")
     @ResponseBody
-    public int[] cluster(@RequestParam(name = "clusterAlg") String clusterAlg, @RequestParam(name = "kValue") int kValue,
-            @RequestParam(name = "epsilon") double epsilon, @RequestParam(name = "minpoints") int minpoints,
-            @RequestParam(name = "iterations") int iterations, @RequestParam(name = "distanceMeasure") String dmString,
-            @RequestParam(name = "selectedIndex") int[] selectedIndex,@RequestParam(name = "repeats") int repeats,
-            @RequestParam(name = "ClusterEvaluation") String clusterEvaluationString,HttpServletRequest request, HttpServletResponse response){
+    public clusterResult cluster(@RequestParam(name = "clusterAlg") String clusterAlg, @RequestParam(name = "kValue") int kValue,
+                                 @RequestParam(name = "epsilon") double epsilon, @RequestParam(name = "minpoints") int minpoints,
+                                 @RequestParam(name = "iterations") int iterations, @RequestParam(name = "distanceMeasure") String dmString,
+                                 @RequestParam(name = "selectedIndex") int[] selectedIndex, @RequestParam(name = "repeats") int repeats,
+                                 @RequestParam(name = "ClusterEvaluation") String clusterEvaluationString, HttpServletRequest request, HttpServletResponse response){
 
         List<List<String>> data = csvdata.getData();
 //        clusterSetting setting = JSON.parseObject(cSetting,clusterSetting.class);
@@ -85,11 +86,8 @@ public class fileController {
 //            System.out.print("]\n");
 //        }
 
-        if(clusterAlg.equals("myKMeans")){
-            return clusterCompute.compute(data,kValue,selectedIndex);
-        }else {
-            return clusterCompute.clusteringJavaML(data,clusterAlg,kValue,epsilon,minpoints,iterations,dmString,selectedIndex,repeats,clusterEvaluationString);
-        }
+
+        return clusterCompute.clusteringJavaML(data,clusterAlg,kValue,epsilon,minpoints,iterations,dmString,selectedIndex,repeats,clusterEvaluationString);
     }
 
     @GetMapping("/statistics/{attrIndex}")
