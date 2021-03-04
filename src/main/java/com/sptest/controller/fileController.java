@@ -113,7 +113,7 @@ public class fileController {
 
     @PostMapping("/kScore")
     @ResponseBody
-    public kScores getKScore(@RequestParam(name = "kList") int[] kList,@RequestParam(name = "clusterAlg") String clusterAlg,
+    public double[] getKScore(@RequestParam(name = "kList") int[] kList,@RequestParam(name = "clusterAlg") String clusterAlg,
                              @RequestParam(name = "iterations") int iterations, @RequestParam(name = "distanceMeasure") String dmString,
                              @RequestParam(name = "selectedIndex") int[] selectedIndex,@RequestParam(name = "repeats") int repeats,
                              @RequestParam(name = "ClusterEvaluation") String clusterEvaluationString,HttpServletRequest request, HttpServletResponse response){

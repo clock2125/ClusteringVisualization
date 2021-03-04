@@ -262,7 +262,7 @@ abstract public class clusterCompute {
         return result;
     }
 
-    public static kScores getKScores(List<List<String>> data, String clusterAlg, int[] kList,
+    public static double[] getKScores(List<List<String>> data, String clusterAlg, int[] kList,
                                      int iterations, String dmString,
                                      int[] selectedIndex, int repeats,
                                      String clusterEvaluationString){
@@ -306,12 +306,9 @@ abstract public class clusterCompute {
                 throw new IllegalStateException("Unexpected value: " + dmString);
         }
 
-        kScores scores;
         int kNum = kList.length;
-        double[] AICScores = new double[kNum];
-        double[] BICScores = new double[kNum];
-        AICScore aic = new AICScore();
-        BICScore bic = new BICScore();
+        double[] SSEScores = new double[kNum];
+        SumOfSquaredErrors sse = new SumOfSquaredErrors();
 
         switch (clusterAlg) {
             case "KMeans":
@@ -320,8 +317,7 @@ abstract public class clusterCompute {
                 for (int i = 0; i < kNum; i++) {
                     clusterer = new KMeans(kList[i], iterations, dm);
                     clusters = clusterer.cluster(rawData);
-                    AICScores[i] = aic.score(clusters);
-                    BICScores[i] = bic.score(clusters);
+                    SSEScores[i] = sse.score(clusters);
                 }
 
                 break;
@@ -330,8 +326,7 @@ abstract public class clusterCompute {
                 for (int i = 0; i < kNum; i++) {
                     clusterer = new KMedoids(kList[i], iterations, dm);
                     clusters = clusterer.cluster(rawData);
-                    AICScores[i] = aic.score(clusters);
-                    BICScores[i] = bic.score(clusters);
+                    SSEScores[i] = sse.score(clusters);
                 }
                 break;
             case "MultiKMeans":
@@ -354,21 +349,19 @@ abstract public class clusterCompute {
                 for (int i = 0; i < kNum; i++) {
                     clusterer = new MultiKMeans(kList[i], iterations, repeats, dm, clusterEvaluation);
                     clusters = clusterer.cluster(rawData);
-                    AICScores[i] = aic.score(clusters);
-                    BICScores[i] = bic.score(clusters);
+                    SSEScores[i] = sse.score(clusters);
                 }
                 break;
         }
 
-        System.out.println("AICScore:");
-        for (double aicScore : AICScores) {
-            System.out.println(aicScore);
-        }
-        System.out.println("BICScore:");
-        for (double bicScore : BICScores) {
-            System.out.println(bicScore);
-        }
-        scores = new kScores(AICScores,BICScores);
-        return scores;
+//        System.out.println("AICScore:");
+//        for (double aicScore : AICScores) {
+//            System.out.println(aicScore);
+//        }
+//        System.out.println("BICScore:");
+//        for (double bicScore : BICScores) {
+//            System.out.println(bicScore);
+//        }
+        return SSEScores;
     }
 }
