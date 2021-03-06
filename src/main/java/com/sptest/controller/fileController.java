@@ -59,35 +59,81 @@ public class fileController {
 
     }
 
-    @PostMapping("/cluster")
-    @ResponseBody
-    public clusterResult cluster(@RequestParam(name = "clusterAlg") String clusterAlg, @RequestParam(name = "kValue") int kValue,
-                                 @RequestParam(name = "epsilon") double epsilon, @RequestParam(name = "minpoints") int minpoints,
-                                 @RequestParam(name = "iterations") int iterations, @RequestParam(name = "distanceMeasure") String dmString,
-                                 @RequestParam(name = "selectedIndex") int[] selectedIndex, @RequestParam(name = "repeats") int repeats,
-                                 @RequestParam(name = "ClusterEvaluation") String clusterEvaluationString, HttpServletRequest request, HttpServletResponse response){
-
-        List<List<String>> data = csvdata.getData();
-//        clusterSetting setting = JSON.parseObject(cSetting,clusterSetting.class);
-//        System.out.println(clusterAlg);
-//        System.out.println(kValue);
-//        System.out.println(epsilon);
-//        System.out.println(minpoints);
-//        System.out.println(iterations);
-//        System.out.println(dmString);
-        for (int index : selectedIndex) {
-            System.out.print(index+",");
-        }
-//        for (List<String> datum : data) {
-//            System.out.print("[");
-//            for (int i : index) {
-//                System.out.print(datum.get(i)+",");
-//            }
-//            System.out.print("]\n");
+//    @PostMapping("/cluster")
+//    @ResponseBody
+//    public clusterResult cluster(@RequestParam(name = "clusterAlg") String clusterAlg, @RequestParam(name = "kValue") int kValue,
+//                                 @RequestParam(name = "epsilon") double epsilon, @RequestParam(name = "minpoints") int minpoints,
+//                                 @RequestParam(name = "iterations") int iterations, @RequestParam(name = "distanceMeasure") String dmString,
+//                                 @RequestParam(name = "selectedIndex") int[] selectedIndex, @RequestParam(name = "repeats") int repeats,
+//                                 @RequestParam(name = "ClusterEvaluation") String clusterEvaluationString, HttpServletRequest request, HttpServletResponse response){
+//
+//        List<List<String>> data = csvdata.getData();
+////        clusterSetting setting = JSON.parseObject(cSetting,clusterSetting.class);
+////        System.out.println(clusterAlg);
+////        System.out.println(kValue);
+////        System.out.println(epsilon);
+////        System.out.println(minpoints);
+////        System.out.println(iterations);
+////        System.out.println(dmString);
+//        for (int index : selectedIndex) {
+//            System.out.print(index+",");
 //        }
+////        for (List<String> datum : data) {
+////            System.out.print("[");
+////            for (int i : index) {
+////                System.out.print(datum.get(i)+",");
+////            }
+////            System.out.print("]\n");
+////        }
+//
+//
+//        return clusterCompute.clusteringJavaML(data,clusterAlg,kValue,epsilon,minpoints,iterations,dmString,selectedIndex,repeats,clusterEvaluationString);
+//    }
 
+    @PostMapping("/cluster/CobWeb")
+    @ResponseBody
+    public clusterResult CobWebCluster(@RequestParam(name = "clusterAlg") String clusterAlg,
+                                       @RequestParam(name = "selectedIndex") int[] selectedIndex,
+                                       @RequestParam(name = "acuity") double acuity,
+                                       @RequestParam(name = "cutoff") double cutoff,
+                                       HttpServletRequest request,
+                                       HttpServletResponse response){
+        List<List<String>> data = csvdata.getData();
+        return clusterCompute.clusteringJavaML(data,clusterAlg,selectedIndex,acuity,cutoff);
+    }
 
-        return clusterCompute.clusteringJavaML(data,clusterAlg,kValue,epsilon,minpoints,iterations,dmString,selectedIndex,repeats,clusterEvaluationString);
+    @PostMapping("/cluster/DBSC")
+    @ResponseBody
+    public clusterResult DBSCCluster(@RequestParam(name = "clusterAlg") String clusterAlg,
+                                     @RequestParam(name = "distanceMeasure") String dmString,
+                                     @RequestParam(name = "selectedIndex") int[] selectedIndex,
+                                     @RequestParam(name = "epsilon") double epsilon,
+                                     @RequestParam(name = "minpoints") int minpoints,
+                                     HttpServletRequest request, HttpServletResponse response){
+        List<List<String>> data = csvdata.getData();
+        return clusterCompute.clusteringJavaML(data,clusterAlg,dmString,selectedIndex,epsilon,minpoints);
+    }
+
+    @PostMapping("/cluster/AQBC")
+    @ResponseBody
+    public clusterResult AQBCCluster(@RequestParam(name = "clusterAlg") String clusterAlg,
+                                     @RequestParam(name = "selectedIndex") int[] selectedIndex,
+                                     @RequestParam(name = "sig") double sig,
+                                     @RequestParam(name = "normalize") boolean normalize,
+                                     HttpServletRequest request, HttpServletResponse response){
+        List<List<String>> data = csvdata.getData();
+        return clusterCompute.clusteringJavaML(data,clusterAlg,selectedIndex,sig,normalize);
+    }
+
+    @PostMapping("/cluster/PartitionBasedClustering")
+    @ResponseBody
+    public clusterResult PartitionBasedCluster(@RequestParam(name = "clusterAlg") String clusterAlg, @RequestParam(name = "kValue") int kValue,
+                                               @RequestParam(name = "KMin") int KMin, @RequestParam(name = "KMax") int KMax,
+                                               @RequestParam(name = "iterations") int iterations, @RequestParam(name = "distanceMeasure") String dmString,
+                                               @RequestParam(name = "selectedIndex") int[] selectedIndex, @RequestParam(name = "repeats") int repeats,
+                                               @RequestParam(name = "ClusterEvaluation") String clusterEvaluationString, HttpServletRequest request, HttpServletResponse response){
+        List<List<String>> data = csvdata.getData();
+        return clusterCompute.clusteringJavaML(data,clusterAlg,kValue,KMin,KMax,iterations,dmString,selectedIndex,repeats,clusterEvaluationString);
     }
 
     @GetMapping("/statistics/{attrIndex}")

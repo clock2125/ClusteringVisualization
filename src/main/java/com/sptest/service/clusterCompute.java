@@ -174,11 +174,16 @@ abstract public class clusterCompute {
 //        return result;
 //    }
 
-    public static clusterResult clusteringJavaML(List<List<String>> data, String clusterAlg, int kValue,
-                                         double epsilon, int minpoints,
-                                         int iterations, String dmString,
-                                         int[] selectedIndex, int repeats,
-                                         String clusterEvaluationString){
+    public static clusterResult clusteringJavaML(List<List<String>> data,
+                                                 String clusterAlg,
+                                                 int kValue,
+                                                 int KMin,
+                                                 int KMax,
+                                                 int iterations,
+                                                 String dmString,
+                                                 int[] selectedIndex,
+                                                 int repeats,
+                                                 String clusterEvaluationString){
         int rowNum = data.size();
         int colNum = selectedIndex.length;
         double[] dataArray = new double[colNum];
@@ -222,33 +227,39 @@ abstract public class clusterCompute {
                 throw new IllegalStateException("Unexpected value: " + dmString);
         }
 
+        ClusterEvaluation ce;
+        switch (clusterEvaluationString){
+            case "AICScore":{
+                ce = new AICScore();
+            }
+            case "BICScore":{
+                ce = new BICScore();
+            }
+            case "SOSE":{
+                ce = new SumOfSquaredErrors();
+            }
+            break;
+            default:
+                throw new IllegalStateException("Unexpected value: " + clusterEvaluationString);
+        }
+
         if(clusterAlg.equals("KMeans")){
             System.out.println("this is KMeans");
             clusterer = new KMeans(kValue,iterations,dm);
         }else if(clusterAlg.equals("KMedoids")){
             System.out.println("this is KMedoids");
             clusterer = new KMedoids(kValue,iterations,dm);
-        }else if(clusterAlg.equals("DBSC")){
-            System.out.println("this is DBSC");
-            clusterer = new DensityBasedSpatialClustering(epsilon,minpoints,dm);
         }else if(clusterAlg.equals("MultiKMeans")){
             System.out.println("this is MultiKMeans");
-            ClusterEvaluation clusterEvaluation;
-            switch (clusterEvaluationString){
-                case "AICScore":{
-                    clusterEvaluation = new AICScore();
-                }
-                case "BICScore":{
-                    clusterEvaluation = new BICScore();
-                }
-                case "SOSE":{
-                    clusterEvaluation = new SumOfSquaredErrors();
-                }
-                break;
-                default:
-                    throw new IllegalStateException("Unexpected value: " + clusterEvaluationString);
-            }
-            clusterer = new MultiKMeans(kValue,iterations,repeats,dm,clusterEvaluation);
+            clusterer = new MultiKMeans(kValue,iterations,repeats,dm,ce);
+        }else if(clusterAlg.equals("FarthestFirst")){
+            clusterer = new FarthestFirst(kValue, dm);
+        }else if(clusterAlg.equals("IterativeFarthestFirst")){
+            clusterer = new IterativeFarthestFirst(KMin,KMax,dm,ce);
+        }else if(clusterAlg.equals("IterativeKMeans")){
+            clusterer = new IterativeKMeans(KMin,KMax,iterations,dm,ce);
+        }else if(clusterAlg.equals("IterativeMultiKMeans")){
+            clusterer = new IterativeMultiKMeans(KMin,KMax,iterations,repeats,dm,ce);
         }
 
         if(clusterer!=null){
@@ -256,7 +267,269 @@ abstract public class clusterCompute {
             int numClusters = clusters.length;
             for(int i=0;i<numClusters;i++){
                 for (Instance instance : clusters[i]) {
-                    result[map.get(instance)] = i;
+                    result[map.get(instance)] = i+1;
+                }
+            }
+
+            List<String> label = new ArrayList<>();
+            List<double[]> mapData = new ArrayList<>();
+            int clusterNum = clusters.length;
+            int[] itemNum = new int[clusterNum];
+            Instance tempInstance;
+            NormalizeMidrange normal = new NormalizeMidrange();
+            normal.build(rawData);
+            int i = 0;
+            for (Dataset cluster : clusters) {
+                tempInstance = new DenseInstance(new double[colNum]);
+                itemNum[i] = cluster.size();
+                normal.filter(cluster);
+                for (Instance instance : cluster) {
+                    tempInstance = tempInstance.add(instance);
+                }
+
+
+                for(int j = 0;j<colNum;j++){
+                    double[] tempDouble = new double[3];
+                    tempDouble[0] = i;
+                    tempDouble[1] = j;
+                    tempDouble[2] = tempInstance.value(j)/itemNum[i];
+                    mapData.add(tempDouble);
+                }
+
+                i++;
+            }
+
+
+            for (int index : selectedIndex) {
+                label.add("属性"+index);
+            }
+
+            return new clusterResult(result, mapData,itemNum,label);
+        }
+
+        return null;
+    }
+
+    public static clusterResult clusteringJavaML(List<List<String>> data,
+                                                 String clusterAlg,
+                                                 int[] selectedIndex,
+                                                 double sig,
+                                                 boolean normalize){
+        int rowNum = data.size();
+        int colNum = selectedIndex.length;
+        double[] dataArray = new double[colNum];
+        int[] result = new int[rowNum];
+
+        HashMap<Instance,Integer> map = new HashMap<>();
+
+        Dataset rawData = new DefaultDataset();
+
+        for(int i =0; i<rowNum;i++){
+            for (int j=0;j<colNum;j++){
+                dataArray[j] = Double.parseDouble(data.get(i).get(selectedIndex[j]));
+            }
+            Instance instance = new DenseInstance(dataArray);
+            rawData.add(instance);
+            map.put(instance,i);
+        }
+
+        Dataset[] clusters;
+        Clusterer clusterer = null;
+
+
+        if(clusterAlg.equals("AQBC")){
+            System.out.println("this is AQBC");
+            clusterer = new AQBC(sig,normalize);
+        }
+        if(clusterer!=null){
+            clusters = clusterer.cluster(rawData);
+            int numClusters = clusters.length;
+            for(int i=0;i<numClusters;i++){
+                for (Instance instance : clusters[i]) {
+                    result[map.get(instance)] = i+1;
+                }
+            }
+
+            List<String> label = new ArrayList<>();
+            List<double[]> mapData = new ArrayList<>();
+            int clusterNum = clusters.length;
+            int[] itemNum = new int[clusterNum];
+            Instance tempInstance;
+            NormalizeMidrange normal = new NormalizeMidrange();
+            normal.build(rawData);
+            int i = 0;
+            for (Dataset cluster : clusters) {
+                tempInstance = new DenseInstance(new double[colNum]);
+                itemNum[i] = cluster.size();
+                normal.filter(cluster);
+                for (Instance instance : cluster) {
+                    tempInstance = tempInstance.add(instance);
+                }
+
+
+                for(int j = 0;j<colNum;j++){
+                    double[] tempDouble = new double[3];
+                    tempDouble[0] = i;
+                    tempDouble[1] = j;
+                    tempDouble[2] = tempInstance.value(j)/itemNum[i];
+                    mapData.add(tempDouble);
+                }
+
+                i++;
+            }
+
+
+            for (int index : selectedIndex) {
+                label.add("属性"+index);
+            }
+
+            return new clusterResult(result, mapData,itemNum,label);
+        }
+
+        return null;
+    }
+
+    public static clusterResult clusteringJavaML(List<List<String>> data,
+                                                 String clusterAlg,
+                                                 String dmString,
+                                                 int[] selectedIndex,
+                                                 double epsilon,
+                                                 int minpoints){
+        int rowNum = data.size();
+        int colNum = selectedIndex.length;
+        double[] dataArray = new double[colNum];
+        int[] result = new int[rowNum];
+
+        HashMap<Instance,Integer> map = new HashMap<>();
+
+        Dataset rawData = new DefaultDataset();
+
+        for(int i =0; i<rowNum;i++){
+            for (int j=0;j<colNum;j++){
+                dataArray[j] = Double.parseDouble(data.get(i).get(selectedIndex[j]));
+            }
+            Instance instance = new DenseInstance(dataArray);
+            rawData.add(instance);
+            map.put(instance,i);
+        }
+
+        Dataset[] clusters;
+        Clusterer clusterer = null;
+
+        DistanceMeasure dm;
+
+        switch (dmString){
+            case "Euclidean":{
+                dm = new EuclideanDistance();
+                break;
+            }
+            case "Minkowski":{
+                dm = new MinkowskiDistance();
+                break;
+            }
+            case "Norm":{
+                dm = new NormDistance();
+                break;
+            }
+            case "Manhattan":{
+                dm = new ManhattanDistance();
+                break;
+            }
+            default:
+                throw new IllegalStateException("Unexpected value: " + dmString);
+        }
+
+        if(clusterAlg.equals("DBSC")){
+            System.out.println("this is DBSC");
+            clusterer = new DensityBasedSpatialClustering(epsilon,minpoints,dm);
+        }
+        if(clusterer!=null){
+            clusters = clusterer.cluster(rawData);
+            int numClusters = clusters.length;
+            for(int i=0;i<numClusters;i++){
+                for (Instance instance : clusters[i]) {
+                    result[map.get(instance)] = i+1;
+                }
+            }
+
+            List<String> label = new ArrayList<>();
+            List<double[]> mapData = new ArrayList<>();
+            int clusterNum = clusters.length;
+            int[] itemNum = new int[clusterNum];
+            Instance tempInstance;
+            NormalizeMidrange normal = new NormalizeMidrange();
+            normal.build(rawData);
+            int i = 0;
+            for (Dataset cluster : clusters) {
+                tempInstance = new DenseInstance(new double[colNum]);
+                itemNum[i] = cluster.size();
+                normal.filter(cluster);
+                for (Instance instance : cluster) {
+                    tempInstance = tempInstance.add(instance);
+                }
+
+
+                for(int j = 0;j<colNum;j++){
+                    double[] tempDouble = new double[3];
+                    tempDouble[0] = i;
+                    tempDouble[1] = j;
+                    tempDouble[2] = tempInstance.value(j)/itemNum[i];
+                    mapData.add(tempDouble);
+                }
+
+                i++;
+            }
+
+
+            for (int index : selectedIndex) {
+                label.add("属性"+index);
+            }
+
+            return new clusterResult(result, mapData,itemNum,label);
+        }
+
+        return null;
+    }
+
+    public static clusterResult clusteringJavaML(List<List<String>> data,
+                                                 String clusterAlg,
+                                                 int[] selectedIndex,
+                                                 double acuity,
+                                                 double cutoff){
+        int rowNum = data.size();
+        int colNum = selectedIndex.length;
+        double[] dataArray = new double[colNum];
+        int[] result = new int[rowNum];
+
+        HashMap<Instance,Integer> map = new HashMap<>();
+
+        Dataset rawData = new DefaultDataset();
+
+        for(int i =0; i<rowNum;i++){
+            for (int j=0;j<colNum;j++){
+                dataArray[j] = Double.parseDouble(data.get(i).get(selectedIndex[j]));
+            }
+            Instance instance = new DenseInstance(dataArray);
+            rawData.add(instance);
+            map.put(instance,i);
+        }
+
+        Dataset[] clusters;
+        Clusterer clusterer = null;
+
+
+        if(clusterAlg.equals("CobWeb")){
+            System.out.println("this is CobWeb");
+            clusterer = new Cobweb(acuity,cutoff);
+        }
+        if(clusterer!=null){
+            clusters = clusterer.cluster(rawData);
+            int numClusters = clusters.length;
+            for(int i=0;i<numClusters;i++){
+                for (Instance instance : clusters[i]) {
+                    if(instance!=null && map!=null){
+                        result[map.get(instance)] = i+1;
+                    }
                 }
             }
 
