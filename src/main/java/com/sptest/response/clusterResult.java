@@ -6,9 +6,22 @@ public class clusterResult {
     int[] result;
     List<double[]> mapData;
     int[] itemNum;
-    List<String> label;
+    int clusterNum;
 
+    public int getClusterNum() {
+        return clusterNum;
+    }
 
+    public void setClusterNum(int clusterNum) {
+        this.clusterNum = clusterNum;
+    }
+
+    public clusterResult(int[] result, List<double[]> mapData, int[] itemNum, int clusterNum) {
+        this.result = result;
+        this.mapData = mapData;
+        this.itemNum = itemNum;
+        this.clusterNum = clusterNum;
+    }
 
     public int[] getResult() {
         return result;
@@ -18,11 +31,10 @@ public class clusterResult {
         this.result = result;
     }
 
-    public clusterResult(int[] result, List<double[]> mapData, int[] itemNum, List<String> label) {
+    public clusterResult(int[] result, List<double[]> mapData, int[] itemNum) {
         this.result = result;
         this.mapData = mapData;
         this.itemNum = itemNum;
-        this.label = label;
     }
 
     public int[] getItemNum() {
@@ -39,13 +51,5 @@ public class clusterResult {
 
     public void setItemNum(int[] itemNum) {
         this.itemNum = itemNum;
-    }
-
-    public List<String> getLabel() {
-        return label;
-    }
-
-    public void setLabel(List<String> label) {
-        this.label = label;
     }
 }
